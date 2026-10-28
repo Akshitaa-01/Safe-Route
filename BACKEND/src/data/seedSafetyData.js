@@ -1,3 +1,4 @@
+// Replaces only the SafetyPoint collection with the curated demo dataset.
 require('dotenv').config();
 
 const mongoose = require('mongoose');

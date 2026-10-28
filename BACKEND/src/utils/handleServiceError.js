@@ -1,3 +1,4 @@
+// Maps known provider failures to safe HTTP messages without returning upstream details.
 const SERVICE_ERRORS = {
   MISSING_API_KEY: [500, 'HEIGIT_API_KEY is not configured'],
   GEOCODING_FAILED: [502, 'Geocoding request failed'],

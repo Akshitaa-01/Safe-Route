@@ -1,3 +1,4 @@
+// Composes Express middleware and API routes; request logic stays in controllers.
 const express = require('express');
 const geocodingRoutes = require('./routes/geocodingRoutes');
 const directionsRoutes = require('./routes/directionsRoutes');

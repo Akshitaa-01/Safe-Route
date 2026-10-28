@@ -1,3 +1,4 @@
+// Gets walking alternatives from the provider; SafeRoute will handle safety ranking.
 const DIRECTIONS_URL =
   'https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson';
 
@@ -12,6 +13,7 @@ async function getWalkingDirections(start, destination) {
 
   let response;
   try {
+    // Use the foot-walking profile; keep credentials in the environment, not source.
     response = await fetch(DIRECTIONS_URL, {
     method: 'POST',
     headers: {
@@ -19,6 +21,7 @@ async function getWalkingDirections(start, destination) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      // GeoJSON/ORS routing requests use [longitude, latitude] coordinate order.
       coordinates: [
         [start.longitude, start.latitude],
         [destination.longitude, destination.latitude],

@@ -1,3 +1,4 @@
+// Stores curated locations as points so nearby-route lookups can use MongoDB geospatial queries.
 const mongoose = require('mongoose');
 
 const safetyPointSchema = new mongoose.Schema(
@@ -14,6 +15,7 @@ const safetyPointSchema = new mongoose.Schema(
         required: true,
       },
       coordinates: {
+        // GeoJSON and MongoDB geospatial queries require [longitude, latitude].
         type: [Number],
         required: true,
         validate: {

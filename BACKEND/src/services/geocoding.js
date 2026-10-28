@@ -1,3 +1,4 @@
+// Resolves human-readable places through the openrouteservice geocoding API.
 const GEOCODING_URL = 'https://api.openrouteservice.org/geocode/search';
 
 async function geocodePlace(query) {
@@ -10,6 +11,7 @@ async function geocodePlace(query) {
   }
 
   const url = new URL(GEOCODING_URL);
+  // The provider can return ambiguous matches for "Delhi"; this suffix targets New Delhi.
   const searchText = query.replace(
     /,\s*Delhi(?:,\s*India)?$/i,
     ', New Delhi, India',
@@ -49,6 +51,7 @@ async function geocodePlace(query) {
   }
 
   const coordinates = feature.geometry?.coordinates;
+  // Convert GeoJSON [longitude, latitude] to the service's named coordinate fields.
   const [longitude, latitude] = coordinates ?? [];
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {

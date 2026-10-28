@@ -1,3 +1,4 @@
+// Handles HTTP validation and response mapping for place geocoding.
 const { geocodePlace } = require('../services/geocoding');
 const { sendServiceError } = require('../utils/handleServiceError');
 

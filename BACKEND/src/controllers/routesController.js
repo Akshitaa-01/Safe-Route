@@ -1,3 +1,4 @@
+// Resolves user-entered places before requesting provider-generated alternatives.
 const { geocodePlace } = require('../services/geocoding');
 const { getWalkingDirections } = require('../services/heigit');
 const { sendServiceError } = require('../utils/handleServiceError');
@@ -17,6 +18,7 @@ async function createRoutes(req, res) {
   }
 
   try {
+    // Geocode both endpoints concurrently before passing coordinates to routing.
     const [start, destination] = await Promise.all([
       geocodePlace(startQuery),
       geocodePlace(destinationQuery),
