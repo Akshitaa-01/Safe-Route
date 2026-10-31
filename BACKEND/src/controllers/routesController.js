@@ -5,6 +5,69 @@ const { getSafetyPointsAlongRoute } = require('../services/safetyAnalysis');
 const { calculateSafetyScore } = require('../services/safetyScore');
 const { sendServiceError } = require('../utils/handleServiceError');
 
+function calculateTimeScore(fastestDuration, durationSeconds) {
+  if (
+    fastestDuration === null ||
+    !Number.isFinite(durationSeconds) ||
+    durationSeconds <= 0
+  ) {
+    return null;
+  }
+
+  return Math.min(100, Math.round((100 * fastestDuration) / durationSeconds));
+}
+
+function calculateFinalScore(
+  safetyScore,
+  timeScore,
+  safetyWeight,
+  timeWeight,
+) {
+  if (!Number.isFinite(safetyScore) || !Number.isFinite(timeScore)) {
+    return null;
+  }
+
+  return Math.round(safetyWeight * safetyScore + timeWeight * timeScore);
+}
+
+function rankRoutes(routes) {
+  const sortedRoutes = [...routes].sort((first, second) => {
+    const firstHasScore = Number.isFinite(first.finalScore);
+    const secondHasScore = Number.isFinite(second.finalScore);
+    if (!firstHasScore) return secondHasScore ? 1 : 0;
+    if (!secondHasScore) return -1;
+    return second.finalScore - first.finalScore;
+  });
+
+  let rank = 0;
+  let hasRecommendedRoute = false;
+  return sortedRoutes.map((route) => {
+    if (!Number.isFinite(route.finalScore)) {
+      return { ...route, rank: null, recommended: false };
+    }
+
+    rank += 1;
+    const recommended = !hasRecommendedRoute;
+    hasRecommendedRoute ||= recommended;
+    return { ...route, rank, recommended };
+  });
+}
+
+function toPublicRoute(route) {
+  return {
+    id: route.id,
+    distanceMeters: route.distanceMeters,
+    durationSeconds: route.durationSeconds,
+    geometry: route.geometry,
+    safetyScore: route.safetyScore,
+    safetyMetrics: route.safetyMetrics,
+    timeScore: route.timeScore,
+    finalScore: route.finalScore,
+    rank: route.rank,
+    recommended: route.recommended,
+  };
+}
+
 async function createRoutes(req, res) {
   const startQuery =
     typeof req.body?.start === 'string' ? req.body.start.trim() : '';
@@ -61,15 +124,10 @@ async function createRoutes(req, res) {
       walkingRoutes.map(async (route) => {
         const { matchedPoints } = await getSafetyPointsAlongRoute(route.geometry);
         const { safetyScore, metrics } = calculateSafetyScore(matchedPoints);
-        const timeScore =
-          fastestDuration !== null &&
-          Number.isFinite(route.durationSeconds) &&
-          route.durationSeconds > 0
-            ? Math.min(
-                100,
-                Math.round((100 * fastestDuration) / route.durationSeconds),
-              )
-            : null;
+        const timeScore = calculateTimeScore(
+          fastestDuration,
+          route.durationSeconds,
+        );
 
         return {
           ...route,
@@ -77,35 +135,16 @@ async function createRoutes(req, res) {
           safetyScore,
           safetyMetrics: metrics,
           timeScore,
-          finalScore:
-            Number.isFinite(safetyScore) && Number.isFinite(timeScore)
-              ? Math.round(
-                  safetyWeight * safetyScore + timeWeight * timeScore,
-                )
-              : null,
+          finalScore: calculateFinalScore(
+            safetyScore,
+            timeScore,
+            safetyWeight,
+            timeWeight,
+          ),
         };
       }),
     );
-    routesWithSafetyPoints.sort((first, second) => {
-      const firstHasScore = Number.isFinite(first.finalScore);
-      const secondHasScore = Number.isFinite(second.finalScore);
-      if (!firstHasScore) return secondHasScore ? 1 : 0;
-      if (!secondHasScore) return -1;
-      return second.finalScore - first.finalScore;
-    });
-
-    let rank = 0;
-    let hasRecommendedRoute = false;
-    const routes = routesWithSafetyPoints.map((route) => {
-      if (!Number.isFinite(route.finalScore)) {
-        return { ...route, rank: null, recommended: false };
-      }
-
-      rank += 1;
-      const recommended = !hasRecommendedRoute;
-      hasRecommendedRoute ||= recommended;
-      return { ...route, rank, recommended };
-    });
+    const routes = rankRoutes(routesWithSafetyPoints).map(toPublicRoute);
 
     return res.json({
       profile: 'foot-walking',
