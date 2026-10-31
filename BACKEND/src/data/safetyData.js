@@ -1,5 +1,4 @@
-// These are simulated demo estimates for the hackathon prototype, not official
-// Delhi Police statistics or factual claims about the safety of these areas.
+// These are simulated demo estimates for the prototype
 module.exports = [
   {
     name: 'Janpath',
